@@ -19,20 +19,28 @@ import (
 )
 
 func main() {
+	log.Println("=== AYO Football API Starting ===")
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	log.Printf("Server Port: %s", cfg.Server.Port)
+	log.Printf("Database Driver: %s", cfg.Database.Driver)
+	log.Printf("GIN Mode: %s", cfg.Server.Mode)
+
 	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
 
 	// Initialize database
+	log.Println("Connecting to database...")
 	db, err := database.NewDatabase(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	log.Println("Database connected successfully!")
 
 	// Initialize repositories
 	userRepo := database.NewUserRepository(db)
