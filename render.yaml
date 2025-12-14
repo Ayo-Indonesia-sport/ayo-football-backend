@@ -1,0 +1,51 @@
+databases:
+  - name: ayo-football-db
+    databaseName: ayo_football
+    user: ayo_user
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: ayo-football-api
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: GIN_MODE
+        value: release
+      - key: SERVER_PORT
+        value: "8080"
+      - key: DB_DRIVER
+        value: postgres
+      - key: DB_HOST
+        fromDatabase:
+          name: ayo-football-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: ayo-football-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: ayo-football-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ayo-football-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: ayo-football-db
+          property: database
+      - key: DB_SSLMODE
+        value: require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_HOURS
+        value: "24"
+      - key: ADMIN_EMAIL
+        value: admin@ayofootball.com
+      - key: ADMIN_PASSWORD
+        value: Admin@123

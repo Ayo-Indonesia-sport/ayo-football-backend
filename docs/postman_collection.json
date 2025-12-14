@@ -1,0 +1,763 @@
+{
+  "info": {
+    "name": "AYO Football API",
+    "description": "API Collection untuk Sistem Manajemen Tim Sepakbola Perusahaan XYZ.\n\nFitur:\n1. Pengelolaan Tim Sepakbola\n2. Pengelolaan Pemain (dengan validasi nomor punggung unik per tim)\n3. Pengelolaan Jadwal Pertandingan\n4. Pencatatan Hasil Pertandingan\n5. Laporan/Report\n\nTech Stack: Golang + GIN Framework + PostgreSQL + JWT Authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "description": "Base URL for API v1"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "description": "JWT Token (auto-filled after login)"
+    },
+    {
+      "key": "team_id",
+      "value": "",
+      "description": "Sample Team ID"
+    },
+    {
+      "key": "player_id",
+      "value": "",
+      "description": "Sample Player ID"
+    },
+    {
+      "key": "match_id",
+      "value": "",
+      "description": "Sample Match ID"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["health"]
+            },
+            "description": "Cek status kesehatan API"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk cek status API"
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    console.log('Token saved successfully');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@ayofootball.com\",\n    \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login dengan kredensial admin default.\n\nEmail: admin@ayofootball.com\nPassword: Admin@123\n\nToken akan otomatis disimpan ke collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registrasi user baru dengan role 'user' (read-only access)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Dapatkan profil user yang sedang login"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk autentikasi (login, register, profile)"
+    },
+    {
+      "name": "3. Teams (Pengelolaan Tim)",
+      "item": [
+        {
+          "name": "Get All Teams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teams?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["teams"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah item per halaman"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Cari berdasarkan nama/kota",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Dapatkan semua tim dengan pagination.\n\nPublic endpoint - tidak perlu authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teams/{{team_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["teams", "{{team_id}}"]
+            },
+            "description": "Dapatkan detail tim berdasarkan ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team with Players",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/teams/{{team_id}}?with_players=true",
+              "host": ["{{base_url}}"],
+              "path": ["teams", "{{team_id}}"],
+              "query": [
+                {
+                  "key": "with_players",
+                  "value": "true",
+                  "description": "Sertakan daftar pemain"
+                }
+              ]
+            },
+            "description": "Dapatkan detail tim beserta daftar pemainnya"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('team_id', jsonData.data.id);",
+                  "    console.log('Team ID saved: ' + jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Persija Jakarta\",\n    \"logo\": \"https://example.com/persija-logo.png\",\n    \"founded_year\": 1928,\n    \"address\": \"Jl. Casablanca No.1\",\n    \"city\": \"Jakarta\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teams",
+              "host": ["{{base_url}}"],
+              "path": ["teams"]
+            },
+            "description": "Tambah tim baru.\n\n**Admin Only** - Membutuhkan token admin.\n\nFields:\n- name: Nama tim (required)\n- logo: URL logo tim (optional)\n- founded_year: Tahun berdiri (required)\n- address: Alamat markas (optional)\n- city: Kota markas (required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Persija Jakarta Updated\",\n    \"city\": \"DKI Jakarta\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/teams/{{team_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["teams", "{{team_id}}"]
+            },
+            "description": "Update data tim.\n\n**Admin Only** - Membutuhkan token admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Team (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teams/{{team_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["teams", "{{team_id}}"]
+            },
+            "description": "Hapus tim (soft delete).\n\n**Admin Only** - Membutuhkan token admin.\n\nData tidak benar-benar dihapus, hanya diberi tanda deleted_at."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk pengelolaan tim sepakbola.\n\nInformasi yang dicatat:\n- Nama tim\n- Logo tim\n- Tahun berdiri\n- Alamat markas tim\n- Kota markas tim"
+    },
+    {
+      "name": "4. Players (Pengelolaan Pemain)",
+      "item": [
+        {
+          "name": "Get All Players",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["players"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "team_id",
+                  "value": "",
+                  "description": "Filter by team ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Dapatkan semua pemain dengan pagination.\n\nPublic endpoint - tidak perlu authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Players by Team",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players?team_id={{team_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["players"],
+              "query": [
+                {
+                  "key": "team_id",
+                  "value": "{{team_id}}"
+                }
+              ]
+            },
+            "description": "Dapatkan semua pemain dari tim tertentu"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Player by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/players/{{player_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["players", "{{player_id}}"]
+            },
+            "description": "Dapatkan detail pemain berdasarkan ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Player",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('player_id', jsonData.data.id);",
+                  "    console.log('Player ID saved: ' + jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"team_id\": \"{{team_id}}\",\n    \"name\": \"Marko Simic\",\n    \"height\": 185.5,\n    \"weight\": 82.0,\n    \"position\": \"forward\",\n    \"jersey_number\": 9\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/players",
+              "host": ["{{base_url}}"],
+              "path": ["players"]
+            },
+            "description": "Tambah pemain baru.\n\n**Admin Only** - Membutuhkan token admin.\n\nFields:\n- team_id: ID tim (required)\n- name: Nama pemain (required)\n- height: Tinggi badan dalam cm (required)\n- weight: Berat badan dalam kg (required)\n- position: Posisi pemain (required)\n  - forward (Penyerang)\n  - midfielder (Gelandang)\n  - defender (Bertahan)\n  - goalkeeper (Penjaga Gawang)\n- jersey_number: Nomor punggung 1-99 (required, UNIK per tim)\n\n**PENTING**: Nomor punggung harus unik dalam satu tim!"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Player",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Marko Simic Updated\",\n    \"jersey_number\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/players/{{player_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["players", "{{player_id}}"]
+            },
+            "description": "Update data pemain.\n\n**Admin Only** - Membutuhkan token admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Player (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/players/{{player_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["players", "{{player_id}}"]
+            },
+            "description": "Hapus pemain (soft delete).\n\n**Admin Only** - Membutuhkan token admin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk pengelolaan pemain.\n\nInformasi yang dicatat:\n- Nama pemain\n- Tinggi badan\n- Berat badan\n- Posisi pemain (penyerang/gelandang/bertahan/penjaga gawang)\n- Nomor punggung (UNIK per tim)\n\nAturan:\n- 1 pemain hanya dapat bernaung pada 1 tim\n- 1 tim dapat memiliki banyak pemain\n- Nomor punggung tidak boleh sama dalam 1 tim"
+    },
+    {
+      "name": "5. Matches (Jadwal Pertandingan)",
+      "item": [
+        {
+          "name": "Get All Matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matches?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "scheduled",
+                  "description": "scheduled/ongoing/completed/cancelled",
+                  "disabled": true
+                },
+                {
+                  "key": "team_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "start_date",
+                  "value": "2025-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-12-31",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Dapatkan semua pertandingan dengan pagination.\n\nFilter yang tersedia:\n- status: scheduled/ongoing/completed/cancelled\n- team_id: Filter by team\n- start_date/end_date: Filter by date range"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scheduled Matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matches?status=scheduled",
+              "host": ["{{base_url}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "scheduled"
+                }
+              ]
+            },
+            "description": "Dapatkan pertandingan yang terjadwal"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Completed Matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matches?status=completed",
+              "host": ["{{base_url}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed"
+                }
+              ]
+            },
+            "description": "Dapatkan pertandingan yang sudah selesai"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Match by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matches/{{match_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["matches", "{{match_id}}"]
+            },
+            "description": "Dapatkan detail pertandingan (termasuk goals)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Match",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('match_id', jsonData.data.id);",
+                  "    console.log('Match ID saved: ' + jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"match_date\": \"2025-01-20\",\n    \"match_time\": \"19:30\",\n    \"home_team_id\": \"{{team_id}}\",\n    \"away_team_id\": \"REPLACE_WITH_AWAY_TEAM_ID\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/matches",
+              "host": ["{{base_url}}"],
+              "path": ["matches"]
+            },
+            "description": "Tambah jadwal pertandingan baru.\n\n**Admin Only** - Membutuhkan token admin.\n\nFields:\n- match_date: Tanggal pertandingan (YYYY-MM-DD)\n- match_time: Waktu pertandingan (HH:MM)\n- home_team_id: ID tim tuan rumah\n- away_team_id: ID tim tamu\n\n**PENTING**: home_team_id dan away_team_id harus berbeda!"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Match",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"match_date\": \"2025-01-21\",\n    \"match_time\": \"20:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/matches/{{match_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["matches", "{{match_id}}"]
+            },
+            "description": "Update jadwal pertandingan.\n\n**Admin Only** - Membutuhkan token admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Record Match Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"home_score\": 2,\n    \"away_score\": 1,\n    \"goals\": [\n        {\n            \"player_id\": \"{{player_id}}\",\n            \"team_id\": \"{{team_id}}\",\n            \"minute\": 15,\n            \"is_own_goal\": false\n        },\n        {\n            \"player_id\": \"{{player_id}}\",\n            \"team_id\": \"{{team_id}}\",\n            \"minute\": 67,\n            \"is_own_goal\": false\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/matches/{{match_id}}/result",
+              "host": ["{{base_url}}"],
+              "path": ["matches", "{{match_id}}", "result"]
+            },
+            "description": "Catat hasil pertandingan.\n\n**Admin Only** - Membutuhkan token admin.\n\nFields:\n- home_score: Skor tim tuan rumah\n- away_score: Skor tim tamu\n- goals: Array informasi gol\n  - player_id: ID pemain yang mencetak gol\n  - team_id: ID tim pencetak gol\n  - minute: Menit terjadinya gol\n  - is_own_goal: Apakah own goal (default: false)\n\nStatus pertandingan akan otomatis berubah menjadi 'completed'."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Match (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/matches/{{match_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["matches", "{{match_id}}"]
+            },
+            "description": "Hapus pertandingan (soft delete).\n\n**Admin Only** - Membutuhkan token admin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk pengelolaan jadwal pertandingan.\n\nInformasi yang dicatat:\n- Tanggal pertandingan\n- Waktu pertandingan\n- Tim tuan rumah\n- Tim tamu\n\nPencatatan hasil:\n- Total skor akhir\n- Pemain yang mencetak gol\n- Waktu terjadinya gol"
+    },
+    {
+      "name": "6. Reports (Laporan)",
+      "item": [
+        {
+          "name": "Get All Match Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/matches?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "matches"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Dapatkan semua laporan pertandingan yang sudah selesai.\n\nInformasi yang ditampilkan:\n- Jadwal pertandingan\n- Tim home & away\n- Skor akhir\n- Status akhir (Tim Home Menang/Tim Away Menang/Draw)\n- Pemain pencetak gol terbanyak\n- Akumulasi total kemenangan tim home\n- Akumulasi total kemenangan tim away"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Match Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/matches/{{match_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "matches", "{{match_id}}"]
+            },
+            "description": "Dapatkan laporan detail untuk pertandingan tertentu"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Top Scorers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/top-scorers?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "top-scorers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Jumlah top scorer"
+                }
+              ]
+            },
+            "description": "Dapatkan daftar pemain pencetak gol terbanyak"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoint untuk laporan/report.\n\nLaporan hasil pertandingan berisi:\n- Jadwal pertandingan\n- Tim home & away\n- Skor akhir\n- Status akhir pertandingan\n- Pemain pencetak gol terbanyak\n- Akumulasi total kemenangan tim home\n- Akumulasi total kemenangan tim away"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}
