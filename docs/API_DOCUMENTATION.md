@@ -25,6 +25,17 @@ Sistem backend API untuk mengelola tim-tim sepakbola dibawah naungan Perusahaan 
 
 ## Base URL
 
+### Production (Live)
+```
+https://ayo-football-api-production.up.railway.app
+```
+
+API Version 1:
+```
+https://ayo-football-api-production.up.railway.app/api/v1
+```
+
+### Local Development
 ```
 http://localhost:8080
 ```
@@ -945,6 +956,42 @@ Import file `docs/postman_collection.json` ke Postman untuk testing semua endpoi
 
 ---
 
+## Quick Test (Live API)
+
+### Health Check
+```bash
+curl https://ayo-football-api-production.up.railway.app/health
+```
+
+### Login
+```bash
+curl -X POST https://ayo-football-api-production.up.railway.app/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@ayofootball.com","password":"Admin@123"}'
+```
+
+### Get All Teams
+```bash
+curl https://ayo-football-api-production.up.railway.app/api/v1/teams
+```
+
+### Create Team (dengan token)
+```bash
+curl -X POST https://ayo-football-api-production.up.railway.app/api/v1/teams \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Persija Jakarta","logo":"https://example.com/logo.png","founded_year":1928,"address":"GBK Stadium","city":"Jakarta"}'
+```
+
+---
+
+## Repository
+
+- **GitHub**: https://github.com/Ayo-Indonesia-sport/ayo-football-backend
+- **Live API**: https://ayo-football-api-production.up.railway.app
+
+---
+
 ## Author
 
-AYO Football API - Technical Test
+**AYO Indonesia Sport** - Technical Test for GO Software Developer
